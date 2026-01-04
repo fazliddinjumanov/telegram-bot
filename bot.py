@@ -12,10 +12,21 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.types import FSInputFile
 from PIL import Image
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.exceptions import TelegramBadRequest
+
 # ================== CONFIG ==================
 BOT_TOKEN = "BOT_TOKEN"
 TEMP_DIR = "temp"
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+
+# ================== MAJBURIY KANALLAR ==================
+CHANNELS = [
+    "@Code_Devs",
+    "@kanal_ikkinchi"
+]
+
 
 # ================== BOT ==================
 bot = Bot(token=BOT_TOKEN)
@@ -23,6 +34,41 @@ dp = Dispatcher()
 logging.basicConfig(level=logging.INFO)
 user_states = {}
 user_files = {}  # Ko'p fayllar uchun saqlash
+
+
+
+# ================== MAJBURIY KANAL FUNKSIYALARI ==================
+async def check_all_subscriptions(bot, user_id: int) -> bool:
+    for channel in CHANNELS:
+        try:
+            member = await bot.get_chat_member(channel, user_id)
+            if member.status not in ("member", "administrator", "creator"):
+                return False
+        except TelegramBadRequest:
+            return False
+    return True
+
+
+def subscribe_keyboard():
+    buttons = []
+
+    for channel in CHANNELS:
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"📢 {channel}",
+                url=f"https://t.me/{channel[1:]}"
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(
+            text="✅ Tekshirish",
+            callback_data="check_sub"
+        )
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 
 # ================== YORDAMCHI FUNKSIYALAR ==================
@@ -132,28 +178,35 @@ def collection_menu():
 @dp.message(Command("start"))
 async def start(message: types.Message):
     user_id = message.from_user.id
+
+    # 🔒 majburiy kanal tekshiruvi
+    if not await check_all_subscriptions(bot, user_id):
+        await message.answer(
+            "❌ Botdan foydalanish uchun quyidagi kanallarga obuna bo‘ling 👇",
+            reply_markup=subscribe_keyboard()
+        )
+        return
+
     user_states[user_id] = "main"
+    user_files.pop(user_id, None)
 
-    if user_id in user_files:
-        del user_files[user_id]
+    await message.answer(
+        "👋 Assalomu alaykum!\n\n👇 Kerakli funksiyani tanlang!",
+        reply_markup=main_menu()
+    )
 
-    welcome_text = """
-👋 *Assalomu alaykum!*
 
-🤖 *Universal File Converter Bot*
+@dp.callback_query(F.data == "check_sub")
+async def recheck_subscription(call: types.CallbackQuery):
+    if await check_all_subscriptions(bot, call.from_user.id):
+        await call.message.answer(
+            "✅ Rahmat! Endi botdan foydalanishingiz mumkin.",
+            reply_markup=main_menu()
+        )
+    else:
+        await call.answer("❌ Hali barcha kanallarga obuna bo‘lmadingiz", show_alert=True)
 
-🔄 *Asosiy funksiyalar:*
 
-📁 **Fayl amallari:**
-• Rasm → PDF - rasmlarni PDF ga aylantirish (ko'p rasm qabul qiladi)
-• Fayl → ZIP - fayllarni ZIP arxiviga aylantirish
-
-📅 **Qo'shimcha:**
-• Taqvim va vaqt ma'lumotlari
-
-👇 *Kerakli funksiyani tanlang!*
-"""
-    await message.answer(welcome_text, reply_markup=main_menu())
 
 
 # ================== TUGMA HANDLERLARI ==================
