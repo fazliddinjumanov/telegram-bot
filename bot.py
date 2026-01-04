@@ -13,7 +13,7 @@ from aiogram.types import FSInputFile
 from PIL import Image
 
 # ================== CONFIG ==================
-BOT_TOKEN = "8436252310:AAH5fVrD5FLMBqodFbxP27q-9cUEjV6jZ6g"
+BOT_TOKEN = "BOT_TOKEN"
 TEMP_DIR = "temp"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
