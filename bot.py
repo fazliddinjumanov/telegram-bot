@@ -23,8 +23,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 
 # ================== MAJBURIY KANALLAR ==================
 CHANNELS = [
-    "@Code_Devs",
-    "@kanal_ikkinchi"
+    "@Code_Devs"
 ]
 
 
